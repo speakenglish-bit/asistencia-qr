@@ -1,97 +1,31 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Pro</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
-        .card { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #reader { width: 100%; border-radius: 10px; background: #000; min-height: 250px; }
-        button { background: #007bff; color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
-        #log { margin-top: 15px; font-size: 12px; color: #666; text-align: left; background: #eee; padding: 10px; border-radius: 5px; max-height: 100px; overflow-y: auto; }
-        .status { padding: 15px; margin-top: 10px; border-radius: 10px; font-weight: bold; }
-        .ok { background: #d4edda; color: #155724; }
-        .err { background: #f8d7da; color: #721c24; }
-    </style>
+    <title>Test Camara</title>
 </head>
 <body>
+    <h3>Prueba Directa de Cámara</h3>
+    <button onclick="encender()">TOCAR PARA ENCENDER CÁMARA</button>
+    <br><br>
+    <video id="video" width="300" height="300" autoplay playsinline style="background:black"></video>
+    <p id="error" style="color:red"></p>
 
-<div class="card">
-    <h2>📲 Escáner de Asistencia</h2>
-    
-    <!-- Botón para forzar el inicio -->
-    <button id="btnIniciar">1. ACTIVAR CÁMARA</button>
-    
-    <div id="reader"></div>
-    <div id="status" class="status">Estado: Esperando cámara</div>
-    
-    <div id="log">Logs de diagnóstico:<br></div>
-</div>
-
-<script>
-    const MI_SCRIPT_URL = "TU_URL_DE_APPS_SCRIPT_AQUÍ"; // REEMPLAZA ESTO
-    let bloqueado = false;
-    let html5QrCode;
-
-    function addLog(msg) {
-        document.getElementById("log").innerHTML += "> " + msg + "<br>";
-    }
-
-    document.getElementById("btnIniciar").addEventListener("click", () => {
-        addLog("Solicitando cámaras...");
-        
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 10, qrbox: 250 },
-            onScanSuccess
-        )
-        .then(() => {
-            addLog("Cámara iniciada con éxito");
-            document.getElementById("btnIniciar").style.display = "none";
-            document.getElementById("status").innerHTML = "📷 Cámara activa";
-        })
-        .catch(err => {
-            addLog("ERROR: " + err);
-            document.getElementById("status").innerHTML = "❌ Error: " + err;
-            document.getElementById("status").className = "status err";
-            
-            if(err.includes("Permission")) {
-                alert("Permiso denegado. Por favor, limpia los permisos de tu navegador.");
+    <script>
+        async function encender() {
+            const video = document.getElementById('video');
+            const errorDiv = document.getElementById('error');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                video.srcObject = stream;
+                alert("✅ ¡Cámara funcionando! El problema era la librería anterior.");
+            } catch (err) {
+                errorDiv.innerHTML = "Error: " + err.name + " - " + err.message;
+                console.error(err);
             }
-        });
-    });
-
-    function onScanSuccess(decodedText) {
-        if (bloqueado) return;
-        bloqueado = true;
-
-        const statusDiv = document.getElementById("status");
-        statusDiv.innerHTML = "⌛ Procesando ID: " + decodedText;
-        statusDiv.className = "status";
-
-        fetch(`${MI_SCRIPT_URL}?id=${decodedText}`)
-            .then(res => res.text())
-            .then(txt => {
-                statusDiv.innerHTML = txt;
-                statusDiv.className = "status ok";
-                setTimeout(() => { 
-                    bloqueado = false; 
-                    statusDiv.innerHTML = "📷 Cámara activa";
-                    statusDiv.className = "status";
-                }, 3000);
-            })
-            .catch(e => {
-                statusDiv.innerHTML = "❌ Error de red";
-                statusDiv.className = "status err";
-                bloqueado = false;
-            });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>
